@@ -10,7 +10,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from django.http import HttpResponse
+from django.shortcuts import render
 
 class ScrapingView(APIView):
     def get(self, request, *args, **kwargs):
@@ -105,8 +106,26 @@ class ScrapingViewSelenium(APIView):
                 datos[input_element.get_attribute('name')] = input_element.get_attribute('value')
 
             print(datos)
+            respuesta={
+                'datos':datos,
+                'url':url
+
+            }
 
         finally:
             driver.quit()
 
-        return Response([], status=status.HTTP_200_OK)
+        return Response(respuesta, status=status.HTTP_200_OK)
+    
+
+class Home(APIView):
+    
+    
+    def get(self, request, *args, **kwargs):
+        # html_content = "<html><body><h1>Bienvenido</h1></body></html>"
+        # # return Response('Bienvenido', status=status.HTTP_200_OK)
+        # return Response(html_content, status=status.HTTP_200_OK, content_type="text/html")
+    
+        # html_content = "<html><body><h1>Bienvenido</h1></body></html>"
+        html = render(request, 'home2.html')
+        return HttpResponse(html, status=status.HTTP_200_OK, content_type="text/html")
