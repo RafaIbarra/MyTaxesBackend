@@ -101,14 +101,14 @@ class ScrapingViewSelenium(APIView):
             # Extraer y procesar los datos dentro del fieldset
             datos = {}
             # Obtener el texto de todos los párrafos dentro del fieldset
-            for p in consulta_form.find_elements(By.TAG_NAME, "p"):
-                print(p.text)
+            # for p in consulta_form.find_elements(By.TAG_NAME, "p"):
+            #     print(p.text)
 
             # Obtener el valor de todos los inputs dentro del fieldset
             for input_element in consulta_form.find_elements(By.TAG_NAME, "input"):
                 datos[input_element.get_attribute('name')] = input_element.get_attribute('value')
 
-            print(datos)
+            
             respuesta={
                 'datos':datos,
                 'url':url
