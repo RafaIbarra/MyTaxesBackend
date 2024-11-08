@@ -234,7 +234,7 @@ class LecturaArchivoXml(APIView):
             items_data = []
             conceptos = {}
             v_element = root.find('.//sifen:gCamItem', namespace)
-            print(v_element)
+            
             # Recorrer cada <gCamItem> en el XML
             for i, item in enumerate(root.findall('.//sifen:gCamItem', namespace), start=1):
                 # Extraer los datos deseados y guardarlos en un diccionario
@@ -399,7 +399,7 @@ class LecturaArchivoXml(APIView):
             }
             
 
-
+            print(data)
             # Devolver el valor en la respuesta
             return Response(data, status=status.HTTP_200_OK)
             # print(data)
