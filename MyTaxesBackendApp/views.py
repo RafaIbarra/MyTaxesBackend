@@ -296,12 +296,106 @@ class LecturaArchivoXml(APIView):
                 'Empresa':nombre_cliente
 
             }
+
+            operacion_exenta=''
+            operacion_iva5=''
+            operacion_iva10=''
+            total_operacion=''
+            liq_iva5=''
+            liq_iva10=''
+            monto_operacion=''
+            total_iva=''
+            gravada5=''
+            gravada10=''
+
+            dv_element = root.find('.//sifen:dSubExe', namespace)
+            if dv_element is not None:
+                operacion_exenta= dv_element.text
+            else:
+                operacion_exenta="No encontrado"
+            
+            dv_element = root.find('.//sifen:dSub5', namespace)
+            if dv_element is not None:
+                operacion_iva5= dv_element.text
+            else:
+                operacion_iva5="No encontrado"
+
+            dv_element = root.find('.//sifen:dSub10', namespace)
+            if dv_element is not None:
+                operacion_iva10= dv_element.text
+            else:
+                operacion_iva10="No encontrado"
+
+            dv_element = root.find('.//sifen:dTotOpe', namespace)
+            if dv_element is not None:
+                total_operacion= dv_element.text
+            else:
+                total_operacion="No encontrado"
+
+            dv_element = root.find('.//sifen:dIVA5', namespace)
+            if dv_element is not None:
+                liq_iva5= dv_element.text
+            else:
+                liq_iva5="No encontrado"
+
+            dv_element = root.find('.//sifen:dIVA5', namespace)
+            if dv_element is not None:
+                liq_iva5= dv_element.text
+            else:
+                liq_iva5="No encontrado"
+
+            dv_element = root.find('.//sifen:dIVA10', namespace)
+            if dv_element is not None:
+                liq_iva10= dv_element.text
+            else:
+                liq_iva10="No encontrado"
+
+            dv_element = root.find('.//sifen:dTotGralOpe', namespace)
+            if dv_element is not None:
+                monto_operacion= dv_element.text
+            else:
+                monto_operacion="No encontrado"
+
+            dv_element = root.find('.//sifen:dTotIVA', namespace)
+            if dv_element is not None:
+                total_iva= dv_element.text
+            else:
+                total_iva="No encontrado"
+
+            dv_element = root.find('.//sifen:dBaseGrav5', namespace)
+            if dv_element is not None:
+                gravada5= dv_element.text
+            else:
+                gravada5="No encontrado"
+
+            dv_element = root.find('.//sifen:dBaseGrav10', namespace)
+            if dv_element is not None:
+                gravada10= dv_element.text
+            else:
+                gravada10="No encontrado"
+
+            data_montos={
+
+            'operacion_exenta':operacion_exenta,
+            'operacion_iva5':operacion_iva5,
+            'operacion_iva10':operacion_iva10,
+            'total_operacion':total_operacion,
+            'liq_iva5':liq_iva5,
+            'liq_iva10':liq_iva10,
+            'monto_operacion':monto_operacion,
+            'total_iva':total_iva,
+            'gravada5':gravada5,
+            'gravada10':gravada10,
+            }
+
+
                         
             data={
                 'DataEmpresa':data_empresa,
                 'DataFactura':data_factura,
                 'Conceptos':conceptos,
-                'DataCliente':data_cliente
+                'DataCliente':data_cliente,
+                'DataMontos':data_montos
             }
             
 
