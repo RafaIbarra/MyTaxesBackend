@@ -399,7 +399,7 @@ class LecturaArchivoXml(APIView):
             }
             
 
-            print(data)
+            #print(data)
             # Devolver el valor en la respuesta
             return Response(data, status=status.HTTP_200_OK)
             # print(data)
