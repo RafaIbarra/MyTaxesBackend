@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+from MyTaxesBackendProjects.seguridad import configuracion
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-o228xu&8)5$s-ocv_ggna62=fh=0la8rg0nc=r$=r(g8iojlc2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','192.168.1.102','tax.rafaelibarra.xyz']
+ALLOWED_HOSTS = ['127.0.0.1','192.168.1.102','tax.rafaelibarra.xyz','192.168.1.103']
 
 
 # Application definition
@@ -37,12 +38,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'MyTaxesBackendApp',
     'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',  
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
+   
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -50,6 +58,21 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+TOKEN_EXPIRED_AFTER_SECONDS=10
+TOKEN_EXPIRED_AFTER_HOURS=8
+TIEMPO_SESION_HORAS=8
+TOKEN_SESION_TIEMPO=20
+
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework_simplejwt.authentication.JWTAuthentication',
+#     ]
+#     ,
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAuthenticated',
+#     )
+# }
 ROOT_URLCONF = 'MyTaxesBackendProjects.urls'
 
 # TEMPLATES = [
@@ -97,6 +120,18 @@ WSGI_APPLICATION = 'MyTaxesBackendProjects.wsgi.application'
 #     }
 # }
 
+DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'MyTaxes',
+            'USER':'postgres',
+            'PASSWORD':'rafael86',
+            'HOST':'localhost',
+            'PORT':'',
+            
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -138,3 +173,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+hostmail=configuracion.DIR_EMAIL
+passmail=configuracion.PASS_EMAIL
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST='smtp.gmail.com'
+EMAIL_PORT = 587 
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = hostmail
+EMAIL_HOST_PASSWORD = passmail

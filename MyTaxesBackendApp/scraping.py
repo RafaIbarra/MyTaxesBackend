@@ -14,7 +14,7 @@ def ScrapingDatos(request):
 
     # Parsear el contenido de la página
     soup = BeautifulSoup(response.content, "html.parser")
-    print(soup)
+    
     # noticias = []
 
     # # Extraer información específica (esto dependerá de la estructura HTML del sitio)

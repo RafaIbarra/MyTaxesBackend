@@ -145,7 +145,7 @@ class LecturaArchivoXml(APIView):
         try:
             tree = ET.parse(xml_file)
             root = tree.getroot()
-
+            
             # Acceder a los elementos usando el prefijo del espacio de nombres
             de_element = root.find('sifen:DE', namespace)
             # if de_element is not None:
@@ -238,18 +238,31 @@ class LecturaArchivoXml(APIView):
             # Recorrer cada <gCamItem> en el XML
             for i, item in enumerate(root.findall('.//sifen:gCamItem', namespace), start=1):
                 # Extraer los datos deseados y guardarlos en un diccionario
+                cantidad = float(item.find('sifen:dCantProSer', namespace).text)
+                orginal=item.find('sifen:dCantProSer', namespace).text
+                if cantidad.is_integer():
+                    dCantProSer = str(int(cantidad))  # Si es entero, convertir a entero y luego a texto
+                else:
+                    dCantProSer = orginal
                 item_data = {
                     "dCodInt": item.find('sifen:dCodInt', namespace).text,
                     "dDesProSer": item.find('sifen:dDesProSer', namespace).text,
                     "dDesUniMed": item.find('sifen:dDesUniMed', namespace).text,
-                    "dCantProSer": item.find('sifen:dCantProSer', namespace).text,
+
+                    # "dCantProSer": item.find('sifen:dCantProSer', namespace).text,
+                    "dCantProSer": dCantProSer,
+
                     "dPUniProSer": item.find('sifen:gValorItem/sifen:dPUniProSer', namespace).text,
                     "dTotBruOpeItem": item.find('sifen:gValorItem/sifen:dTotBruOpeItem', namespace).text,
                     "dDescItem": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dDescItem', namespace).text,
-                    "dPorcDesIt": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dPorcDesIt', namespace).text,
-                    "dDescGloItem": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dDescGloItem', namespace).text,
-                    "dAntPreUniIt": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dAntPreUniIt', namespace).text,
-                    "dAntGloPreUniIt": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dAntGloPreUniIt', namespace).text,
+                    # "dPorcDesIt": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dPorcDesIt', namespace).text,
+                    "dPorcDesIt": "0",
+                    # "dDescGloItem": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dDescGloItem', namespace).text,
+                    "dDescGloItem": "0",
+                    # "dAntPreUniIt": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dAntPreUniIt', namespace).text,
+                    "dAntPreUniIt": "0",
+                    # "dAntGloPreUniIt": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dAntGloPreUniIt', namespace).text,
+                    "dAntGloPreUniIt": "0",
                     "dTotOpeItem": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dTotOpeItem', namespace).text,
                     "iAfecIVA": item.find('sifen:gCamIVA/sifen:iAfecIVA', namespace).text,
                     "dDesAfecIVA": item.find('sifen:gCamIVA/sifen:dDesAfecIVA', namespace).text,
@@ -334,19 +347,16 @@ class LecturaArchivoXml(APIView):
 
             dv_element = root.find('.//sifen:dIVA5', namespace)
             if dv_element is not None:
-                liq_iva5= dv_element.text
+                # liq_iva5= dv_element.text
+                liq_iva5 = str(round(float(dv_element.text), 0))
             else:
                 liq_iva5="No encontrado"
 
-            dv_element = root.find('.//sifen:dIVA5', namespace)
-            if dv_element is not None:
-                liq_iva5= dv_element.text
-            else:
-                liq_iva5="No encontrado"
+            
 
             dv_element = root.find('.//sifen:dIVA10', namespace)
             if dv_element is not None:
-                liq_iva10= dv_element.text
+                liq_iva10= str(round(float(dv_element.text), 0))
             else:
                 liq_iva10="No encontrado"
 
@@ -358,7 +368,7 @@ class LecturaArchivoXml(APIView):
 
             dv_element = root.find('.//sifen:dTotIVA', namespace)
             if dv_element is not None:
-                total_iva= dv_element.text
+                total_iva= str(round(float(dv_element.text), 0))
             else:
                 total_iva="No encontrado"
 
@@ -389,7 +399,7 @@ class LecturaArchivoXml(APIView):
             }
 
 
-                        
+               
             data={
                 'DataEmpresa':data_empresa,
                 'DataFactura':data_factura,
