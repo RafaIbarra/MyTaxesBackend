@@ -119,7 +119,7 @@ def registrofactura(request):
                 if tipo_registro.lower()!='manual':
                     condicion_cdc = Q(cdc__exact=request.data['cdc'])
                     cdc_existente=Facturas.objects.filter(condicion_cdc)
-                    print(cdc_existente)
+                    # print(cdc_existente)
                     if cdc_existente:
                         return Response({'error':'La factura con el cdc ya fue registrado'},status= status.HTTP_400_BAD_REQUEST)
 

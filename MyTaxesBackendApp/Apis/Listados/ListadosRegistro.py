@@ -117,12 +117,12 @@ def GenerarArchivoCsv(request,anno,mes):
             to_email = correo_user
             email = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
             email.attach_alternative(html_content, 'text/html')
-            time.sleep(5)
-            # with open(ruta, 'rb') as archivo_csv:
-            #     email.attach(nombre_archivo_csv, archivo_csv.read(), 'text/csv')  # Adjuntar el archivo CSV
             
-            # # Enviar el correo
-            # email.send()
+            with open(ruta, 'rb') as archivo_csv:
+                email.attach(nombre_archivo_csv, archivo_csv.read(), 'text/csv')  # Adjuntar el archivo CSV
+            
+            # Enviar el correo
+            email.send()
             os.remove(ruta) 
             return Response({'mensaje': 'Archivo enviado a ' + correo_user},status=status.HTTP_200_OK)
         else:

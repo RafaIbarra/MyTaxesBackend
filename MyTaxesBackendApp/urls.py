@@ -27,6 +27,8 @@ urlpatterns = [
 
      path('GenerarArchivoCsv/<int:anno>/<int:mes>/',GenerarArchivoCsv,name="GenerarArchivoCsv"), 
 
+     path('RegistroMeses/',registromeses,name='registromeses'),
+
     
     
 ]

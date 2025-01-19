@@ -27,7 +27,7 @@ class ScrapingView(APIView):
         # Parsear el contenido de la página
         soup = BeautifulSoup(response.content, "html.parser")
         consulta_form = soup.find("fieldset", id="consultaform")
-        print(consulta_form)
+        
         noticias = []
         
         # Extraer información específica (esto dependerá de la estructura HTML del sitio)

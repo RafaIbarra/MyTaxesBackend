@@ -8,9 +8,16 @@ from ..Seguridad.obtener_datos_token import obtener_datos_token
 from ..Seguridad.Validaciones import validacionpeticion
 from word2number_es import w2n
 import time
+from datetime import datetime
+from MyTaxesBackendApp.Serializadores.MesesSerializers import *
 # Configurar FFmpeg para pydub
-AudioSegment.ffmpeg = "D:\\Programas\\ffmpeg\\bin\\ffmpeg.exe"  # Ruta de FFmpeg
+# AudioSegment.ffmpeg = "D:\\Programas\\ffmpeg\\bin\\ffmpeg.exe"  # Ruta de FFmpeg
+# AudioSegment.ffmpeg = "/usr/bin/ffmpeg"
 
+if os.name == 'nt':  # 'nt' es para Windows
+    AudioSegment.ffmpeg = "D:\\Programas\\ffmpeg\\bin\\ffmpeg.exe"  # Ruta para Windows
+else:
+    AudioSegment.ffmpeg = "/usr/bin/ffmpeg"  # Ruta para otros sistemas operativos (Linux, macOS)
 @api_view(['POST'])
 def upload_audio(request):
     token_sesion, usuario, id_user = obtener_datos_token(request)
@@ -195,3 +202,40 @@ def prueba_transcripcion(request):
     
     else:
         return Response({'mensaje': 'Token no válido'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+def registromeses(request):
+
+    data_list = []
+    data_errores=''
+    n=1
+    while n < 13:
+        if n==1: nombremes='Enero'
+        if n==2: nombremes='Febrero'
+        if n==3: nombremes='Marzo'
+        if n==4: nombremes='Abril'
+        if n==5: nombremes='Mayo'
+        if n==6: nombremes='Junio'
+        if n==7: nombremes= 'Julio'
+        if n==8: nombremes='Agosto'
+        if n==9: nombremes='Septiembre'
+        if n==10: nombremes='Octubre'
+        if n==11: nombremes='Noviembre'
+        if n==12: nombremes='Diciembre'
+
+        datasave={
+            "id":  0,
+            "numero_mes": n,
+            "nombre_mes":nombremes,
+            "fecha_registro": datetime.now()
+            
+        }
+        data_list.append(datasave)
+        
+        meses_serializer=MesesSerializers(data=datasave)
+        n=n+1
+        if meses_serializer.is_valid():
+            meses_serializer.save()
+        else:
+            return Response({'error':meses_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
