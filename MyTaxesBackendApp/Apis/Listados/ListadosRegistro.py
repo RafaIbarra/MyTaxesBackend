@@ -10,6 +10,7 @@ from .generacion_datos import *
 from MyTaxesBackendApp.Serializadores.FacturasSerializers import *
 from MyTaxesBackendApp.Serializadores.ResumenPeriodoSerializers import *
 from MyTaxesBackendApp.Serializadores.MesesSerializers import *
+from MyTaxesBackendApp.Serializadores.EmpresasSerializers import *
 from MyTaxesBackendApp.models import Usuarios
 import time
 from django.template.loader import render_to_string
@@ -72,6 +73,35 @@ def meses(request):
                 
         if lista:
             result_serializer=MesesSerializers(lista,many=True)
+
+            if result_serializer.data:
+                return Response(result_serializer.data,status= status.HTTP_200_OK)
+
+            return Response({'message':result_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+                
+        else:
+            return Response([],status= status.HTTP_200_OK)
+     else:
+             return Response(resp,status= status.HTTP_403_FORBIDDEN)
+     
+@api_view(['POST'])
+def ListaEmpresas(request):
+
+     token_sesion,usuario,id_user =obtener_datos_token(request)
+     resp=validacionpeticion(token_sesion)
+     empresaconsulta=request.data['rucempresa']
+     if resp==True:           
+        
+        if len(empresaconsulta)>0:
+             condicion1 = Q(ruc_empresa__exact=empresaconsulta)
+             lista = Empresas.objects.filter(condicion1).order_by('nombre_empresa')
+        else:
+             lista = Empresas.objects.order_by('nombre_empresa')
+        
+
+                
+        if lista:
+            result_serializer=EmpresasSerializer(lista,many=True)
 
             if result_serializer.data:
                 return Response(result_serializer.data,status= status.HTTP_200_OK)

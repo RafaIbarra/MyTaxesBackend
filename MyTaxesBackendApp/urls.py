@@ -29,6 +29,11 @@ urlpatterns = [
 
      path('RegistroMeses/',registromeses,name='registromeses'),
 
+     path('ListaEmpresas/',ListaEmpresas,name='ListaEmpresas'),
+
+
+
+
     
     
 ]
