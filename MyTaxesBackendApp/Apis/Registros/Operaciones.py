@@ -82,7 +82,7 @@ def registrofactura(request):
             mensaje='Seleccione una fecha'
             data_errores = data_errores + mensaje if len(data_errores) == 0 else data_errores + '; ' + mensaje
         
-        print('data_errores',len(data_errores))
+        
         
         if len(data_errores)==0:
             datasave={
@@ -128,7 +128,7 @@ def registrofactura(request):
             
 
             if factura_serializer.is_valid():
-                print('es valido')
+                
                 factura_instance =factura_serializer.save()
                 
                 id_factura_gen=factura_instance.id

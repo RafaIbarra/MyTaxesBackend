@@ -97,11 +97,13 @@ def ListaEmpresas(request):
              lista = Empresas.objects.filter(condicion1).order_by('nombre_empresa')
         else:
              lista = Empresas.objects.order_by('nombre_empresa')
-        
+
+        # lista = Empresas.objects.order_by('nombre_empresa')
 
                 
         if lista:
             result_serializer=EmpresasSerializer(lista,many=True)
+            
 
             if result_serializer.data:
                 return Response(result_serializer.data,status= status.HTTP_200_OK)
