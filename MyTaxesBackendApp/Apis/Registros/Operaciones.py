@@ -15,11 +15,13 @@ from MyTaxesBackendApp.Serializadores.EmpresasSerializers import *
 from MyTaxesBackendApp.Serializadores.FacturasSerializers import *
 from MyTaxesBackendApp.Serializadores.FacturasDetalleSerializers import *
 from MyTaxesBackendApp.models import *
+import time
 @api_view(['POST'])
 def registrofactura(request):
 
     token_sesion,usuario,id_user =obtener_datos_token(request)
     resp=validacionpeticion(token_sesion)
+    
     if resp==True:
         data_list = []
         data_errores=''
@@ -31,29 +33,7 @@ def registrofactura(request):
         ruc_empresa=request.data['rucempresa']
         nombre_empresa=request.data['nombreempresa']
         tipo_registro=request.data['tiporegistro']
-        condicion_empresa1 = Q(ruc_empresa__exact=ruc_empresa)
-        empresa_existente=Empresas.objects.filter(condicion_empresa1)
-        if empresa_existente:
-            pass
-        else:
-            
-            empresa_save={
-                "id":0,
-                "nombre_empresa":nombre_empresa,
-                "ruc_empresa":ruc_empresa,
-                "fecha_registro": datetime.now()
-            }
-            
-            empresa_serializer=EmpresasSerializer(data=empresa_save)
-            if empresa_serializer.is_valid():
-                empresa_serializer.save()
-            else:
-                
-                return Response({'message':empresa_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
-
         
-        empresa_registro=Empresas.objects.filter(condicion_empresa1).values()
-        id_empresa=empresa_registro[0]['id']
         
         
         controlcampos=True
@@ -73,6 +53,14 @@ def registrofactura(request):
         if suma_montos<1:
             mensaje='El monto no puede ser menor a 1'
             data_errores = data_errores + mensaje if len(data_errores) == 0 else data_errores + '; ' + mensaje
+
+        if len(request.data['numero_factura']) < 10:
+            mensaje='La numeracion de facturas debe componerse de al menos 10 numeros'
+            data_errores = data_errores + mensaje if len(data_errores) == 0 else data_errores + '; ' + mensaje
+
+        if len(request.data['rucempresa']) < 1:
+            mensaje='Ingrese el ruc de la empresa'
+            data_errores = data_errores + mensaje if len(data_errores) == 0 else data_errores + '; ' + mensaje
         
         if validaciones_registros(request.data,'fecha_factura'):
             fecha_obj = datetime.strptime(request.data['fecha_factura'], '%Y-%m-%d')
@@ -81,6 +69,30 @@ def registrofactura(request):
         else: 
             mensaje='Seleccione una fecha'
             data_errores = data_errores + mensaje if len(data_errores) == 0 else data_errores + '; ' + mensaje
+
+        condicion_empresa1 = Q(ruc_empresa__exact=ruc_empresa)
+        empresa_existente=Empresas.objects.filter(condicion_empresa1)
+        if empresa_existente:
+            pass
+        else:
+            
+            empresa_save={
+                "id":0,
+                "nombre_empresa":nombre_empresa,
+                "ruc_empresa":ruc_empresa,
+                "fecha_registro": datetime.now()
+            }
+            
+            empresa_serializer=EmpresasSerializer(data=empresa_save)
+            if empresa_serializer.is_valid():
+                empresa_serializer.save()
+            else:
+                
+                return Response({'error':empresa_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+
+        
+        empresa_registro=Empresas.objects.filter(condicion_empresa1).values()
+        id_empresa=empresa_registro[0]['id']
         
         
         
@@ -146,6 +158,7 @@ def registrofactura(request):
                         # data=datos_resumen(id_user,anno,mes)
                         return Response({'mensaje':'Registro Factura Almacenado'},status= status.HTTP_200_OK)
                     else:
+                        
                         t=Facturas.objects.get(id=id_factura_gen)
                         t.delete()
                         return Response({'mensaje':serializer.errors},status= status.HTTP_400_BAD_REQUEST)
@@ -193,7 +206,8 @@ def registrofactura(request):
                 
             else:
                 
-                return Response({'message':factura_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+                # return Response({'message':factura_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+                return Response({'error':'error en registro de facturas'},status= status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error':data_errores},status= status.HTTP_400_BAD_REQUEST)
 
