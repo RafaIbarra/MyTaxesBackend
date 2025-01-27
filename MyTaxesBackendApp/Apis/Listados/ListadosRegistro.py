@@ -20,6 +20,7 @@ from django.utils.html import strip_tags
 def MovimientosFacturas(request,anno,mes,id):
     token_sesion,usuario,id_user =obtener_datos_token(request)
     resp=validacionpeticion(token_sesion)
+    
     if resp==True:
         
         lista_facturas=registros_facturas(id_user,anno,mes,id)
@@ -27,10 +28,10 @@ def MovimientosFacturas(request,anno,mes,id):
         # lista_egresos_unico = [elemento for elemento in lista_egresos if elemento.get('id') == id]
         
         if lista_facturas:
-            
+            # lista_facturas = sorted(lista_facturas,key=lambda x: x['id'], reverse=False)
             result_serializer=FacturasSerializer(lista_facturas,many=True)
-            
-            return Response(result_serializer.data,status= status.HTTP_200_OK)
+            sorted_data = sorted(result_serializer.data, key=lambda x: x['id'], reverse=True)
+            return Response(sorted_data,status= status.HTTP_200_OK)
         else:
             return Response([],status= status.HTTP_200_OK)
         
@@ -41,6 +42,7 @@ def MovimientosFacturas(request,anno,mes,id):
 def ResumenPeriodo(request,anno):
     token_sesion,usuario,id_user =obtener_datos_token(request)
     resp=validacionpeticion(token_sesion)
+    
     if resp==True:
         
         data_resumen=resumen_periodo(id_user,anno)

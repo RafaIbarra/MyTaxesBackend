@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from MyTaxesBackendApp.models import Facturas,Empresas,FacturasDetalle,Meses
-
+from MyTaxesBackendApp.Serializadores.FacturasDetalleSerializers import *
+import json
 class FacturasSerializer(serializers.ModelSerializer):
     NombreEmpresa=serializers.SerializerMethodField()
     RucEmpresa=serializers.SerializerMethodField()
-    DetalleFactura=serializers.SerializerMethodField()
+    DetalleFactura = serializers.SerializerMethodField()
+
     MesFactura=serializers.SerializerMethodField()
     NombreMesFactura=serializers.SerializerMethodField()
     AnnoFactura=serializers.SerializerMethodField()
@@ -31,27 +33,31 @@ class FacturasSerializer(serializers.ModelSerializer):
                 "RucEmpresa",
                 "DetalleFactura"
                 ]
-        
+    
+    # def get_DetalleFactura(self, obj):
+    #     try:
+    #         # Filtramos los detalles de la factura
+    #         detalles_obj = FacturasDetalle.objects.filter(factura_id=obj.id).values('id', 'concepto', 'cantidad', 'total')
+    #         # Convertimos a formato JSON
+    #         result = [{
+    #             "id": detalle['id'],
+    #             "Concepto": detalle['concepto'],
+    #             "Cantidad": detalle['cantidad'],
+    #             "Total": detalle['total'],
+    #         } for detalle in detalles_obj]
+
+    #         return result
+    #     except FacturasDetalle.DoesNotExist:
+    #         return []
     def get_DetalleFactura(self, obj):
+        # Filtrar los detalles relacionados con la factura
+        detalles_obj = FacturasDetalle.objects.filter(factura=obj)
         
-        try:
-            # condicion2 = Q(egresos_id=cod_gasto)
-            result=[]
-            detalles_obj = FacturasDetalle.objects.filter(factura_id=obj.id).values()
-            for elemento in detalles_obj:
-                
-                
-                valores={
-                    "id":elemento['id'],
-                    "Concepto":elemento['concepto'],
-                    "Cantidad":elemento['cantidad'],
-                    "Total":elemento['total'],
-                    
-                }
-                result.append(valores)
-            return result
-        except FacturasDetalle.DoesNotExist:
-            return None
+        # Serializamos los detalles utilizando el serializador de FacturasDetalle
+        detalle_serializer = FacturasDetalleSerializer(detalles_obj, many=True)
+        
+        return detalle_serializer.data  # Retornamos los datos serializados
+        
     def get_NombreEmpresa(self, obj):
         
         cod_empresa = obj.retorno_empresa_id()

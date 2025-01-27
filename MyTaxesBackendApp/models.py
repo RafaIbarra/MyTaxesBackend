@@ -58,10 +58,11 @@ class Facturas(models.Model):
 class FacturasDetalle(models.Model):
     
     id= models.AutoField(primary_key=True, serialize=False)
-    factura=models.ForeignKey(Facturas, on_delete=models.CASCADE, default=1)
+    # factura=models.ForeignKey(Facturas, on_delete=models.CASCADE, default=1)
+    factura = models.ForeignKey(Facturas, related_name='detalles', on_delete=models.CASCADE)
     concepto=models.CharField(max_length=200,blank=False)
     cantidad=models.CharField(max_length=10,blank=False)
-    total=models.IntegerField()
+    total = models.DecimalField(max_digits=10, decimal_places=2) 
     fecha_registro=models.DateTimeField("fecha registro")
 
     class Meta:

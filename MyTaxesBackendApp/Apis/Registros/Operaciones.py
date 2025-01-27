@@ -97,6 +97,7 @@ def registrofactura(request):
         
         
         if len(data_errores)==0:
+            
             datasave={
                 "id":request.data['codfactura'],
                 "user": id_user,
@@ -130,7 +131,8 @@ def registrofactura(request):
             else:
                 if tipo_registro.lower()!='manual':
                     condicion_cdc = Q(cdc__exact=request.data['cdc'])
-                    cdc_existente=Facturas.objects.filter(condicion_cdc)
+                    condicion_user=Q(user_id__exact=id_user)
+                    cdc_existente=Facturas.objects.filter(condicion_cdc & condicion_user)
                     # print(cdc_existente)
                     if cdc_existente:
                         return Response({'error':'La factura con el cdc ya fue registrado'},status= status.HTTP_400_BAD_REQUEST)
@@ -161,7 +163,8 @@ def registrofactura(request):
                         
                         t=Facturas.objects.get(id=id_factura_gen)
                         t.delete()
-                        return Response({'mensaje':serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+
+                        return Response({'error':serializer.errors},status= status.HTTP_400_BAD_REQUEST)
                 
                 else:
                     
@@ -209,6 +212,7 @@ def registrofactura(request):
                 # return Response({'message':factura_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
                 return Response({'error':'error en registro de facturas'},status= status.HTTP_400_BAD_REQUEST)
         else:
+            
             return Response({'error':data_errores},status= status.HTTP_400_BAD_REQUEST)
 
         # return Response([],status= status.HTTP_200_OK)
@@ -222,12 +226,16 @@ def eliminarfactura(request):
     token_sesion,usuario,id_user =obtener_datos_token(request)
     resp=validacionpeticion(token_sesion)
     if resp==True:
-         
+        
+        
         facturasdel=request.data['facturaseliminar']
-
+        
         if type(facturasdel)==str:
+            
             facturasdel=ast.literal_eval(facturasdel)
 
+        
+        # return Response({'error':'No hay registros que eliminar'},status= status.HTTP_400_BAD_REQUEST)
         if len(facturasdel)>0:
             for item in facturasdel:
                 condicion1 = Q(id__exact=item)
