@@ -141,6 +141,7 @@ class LecturaArchivoXml(APIView):
     def post(self, request, *args, **kwargs):
         # Configuración de opciones para el modo headless
         xml_file = request.FILES['file']
+        
         namespace = {'sifen': 'http://ekuatia.set.gov.py/sifen/xsd'}
         try:
             tree = ET.parse(xml_file)
@@ -148,6 +149,7 @@ class LecturaArchivoXml(APIView):
             
             # Acceder a los elementos usando el prefijo del espacio de nombres
             de_element = root.find('sifen:DE', namespace)
+            
             # if de_element is not None:
             #     print("Elemento DE encontrado:", de_element.attrib)
             # else:
@@ -158,6 +160,20 @@ class LecturaArchivoXml(APIView):
             dig_ver=''
             Ruc_empresa=''
             nombre_empres=''
+                
+            # dv_element = root.find('.//sifen:Id', namespace)
+            # print(dv_element)
+            # if dv_element is not None:
+            #     cdc= dv_element.text
+            # else:
+            #     cdc="No encontrado"
+            de_element = root.find('.//sifen:DE', namespace)
+            if de_element is not None:
+                cdc = de_element.get('Id')
+            else:
+                cdc = "No encontrado"
+
+            
 
             dv_element = root.find('.//sifen:dRucEm', namespace)
             if dv_element is not None:
@@ -228,11 +244,15 @@ class LecturaArchivoXml(APIView):
             data_factura={
                 'FechaOperacion':fechafac,
                 'NroFactura':nro_factura,
-                'Timbrado': timbrado
+                'Timbrado': timbrado,
+                'cdc':cdc
             }
 
             items_data = []
             conceptos = {}
+
+            DetalleFactura={}
+            items_data_detalle = []
             v_element = root.find('.//sifen:gCamItem', namespace)
             
             # Recorrer cada <gCamItem> en el XML
@@ -240,6 +260,8 @@ class LecturaArchivoXml(APIView):
                 # Extraer los datos deseados y guardarlos en un diccionario
                 cantidad = float(item.find('sifen:dCantProSer', namespace).text)
                 orginal=item.find('sifen:dCantProSer', namespace).text
+
+                dDescItem_value =item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dDescItem', namespace)
                 if cantidad.is_integer():
                     dCantProSer = str(int(cantidad))  # Si es entero, convertir a entero y luego a texto
                 else:
@@ -254,7 +276,7 @@ class LecturaArchivoXml(APIView):
 
                     "dPUniProSer": item.find('sifen:gValorItem/sifen:dPUniProSer', namespace).text,
                     "dTotBruOpeItem": item.find('sifen:gValorItem/sifen:dTotBruOpeItem', namespace).text,
-                    "dDescItem": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dDescItem', namespace).text,
+                    "dDescItem": dDescItem_value.text if dDescItem_value is not None else "",
                     # "dPorcDesIt": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dPorcDesIt', namespace).text,
                     "dPorcDesIt": "0",
                     # "dDescGloItem": item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dDescGloItem', namespace).text,
@@ -272,10 +294,19 @@ class LecturaArchivoXml(APIView):
                     "dLiqIVAItem": item.find('sifen:gCamIVA/sifen:dLiqIVAItem', namespace).text,
                     "dBasExe": item.find('sifen:gCamIVA/sifen:dBasExe', namespace).text
                 }
-                
+                item_detalle={
+                     "cantidad":dCantProSer,
+                    "concepto":item.find('sifen:dDesProSer', namespace).text,
+                    "factura":0,
+                    "fecha_registro":"",
+                    "id":0,
+                    "total":item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dTotOpeItem', namespace).text
+                }
                 # Agregar el diccionario a la lista
+                items_data_detalle.append(item_detalle)
                 items_data.append(item_data)
                 conceptos[f"Item_{i}"] = item_data
+                
 
             # Mostrar los datos extraídos
 
@@ -348,7 +379,7 @@ class LecturaArchivoXml(APIView):
             dv_element = root.find('.//sifen:dIVA5', namespace)
             if dv_element is not None:
                 # liq_iva5= dv_element.text
-                liq_iva5 = str(round(float(dv_element.text), 0))
+                liq_iva5 = str(int(round(float(dv_element.text), 0)))
             else:
                 liq_iva5="No encontrado"
 
@@ -356,7 +387,8 @@ class LecturaArchivoXml(APIView):
 
             dv_element = root.find('.//sifen:dIVA10', namespace)
             if dv_element is not None:
-                liq_iva10= str(round(float(dv_element.text), 0))
+                
+                liq_iva10= str(int(round(float(dv_element.text), 0)))
             else:
                 liq_iva10="No encontrado"
 
@@ -368,7 +400,7 @@ class LecturaArchivoXml(APIView):
 
             dv_element = root.find('.//sifen:dTotIVA', namespace)
             if dv_element is not None:
-                total_iva= str(round(float(dv_element.text), 0))
+                total_iva= str(int(round(float(dv_element.text), 0)))
             else:
                 total_iva="No encontrado"
 
@@ -407,11 +439,37 @@ class LecturaArchivoXml(APIView):
                 'DataCliente':data_cliente,
                 'DataMontos':data_montos
             }
+
+            
+
+            data_result={
+                
+
+                "MesFactura":0,
+                "NombreEmpresa":data_empresa['Empresa'].strip() ,
+                "NombreMesFactura":"0",
+                "RucEmpresa":data_empresa['NroRuc'].strip() ,
+                "cdc":data_factura['cdc'].strip() ,
+                "empresa":"0",
+                "fecha_factura":data_factura['FechaOperacion'],
+                "fecha_registro":"",
+                "id":0,
+                "iva10":data_montos['liq_iva10'],
+                "iva5":data_montos['liq_iva5'],
+                "liquidacion_iva":data_montos['total_iva'],
+                "numero_factura":data_factura['NroFactura'].strip() ,
+                "tipo_registro":"",
+                "total_factura":data_montos['total_operacion'],
+                "user":0,
+                "DetalleFactura":items_data_detalle
+
+            }
+            
             
 
             #print(data)
             # Devolver el valor en la respuesta
-            return Response(data, status=status.HTTP_200_OK)
+            return Response(data_result, status=status.HTTP_200_OK)
             # print(data)
         except ET.ParseError:
                 return Response({"error": "El archivo no es un XML válido"}, status=status.HTTP_400_BAD_REQUEST)

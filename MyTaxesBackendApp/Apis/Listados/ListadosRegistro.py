@@ -30,6 +30,7 @@ def MovimientosFacturas(request,anno,mes,id):
         if lista_facturas:
             # lista_facturas = sorted(lista_facturas,key=lambda x: x['id'], reverse=False)
             result_serializer=FacturasSerializer(lista_facturas,many=True)
+            
             sorted_data = sorted(result_serializer.data, key=lambda x: x['id'], reverse=True)
             return Response(sorted_data,status= status.HTTP_200_OK)
         else:
@@ -144,7 +145,14 @@ def GenerarArchivoCsv(request,anno,mes):
             nombre_archivo_csv = os.path.basename(ruta)
             Nombre = nombre_user + '; ' + apellido_user
             user_name = user
-            html_content = render_to_string('archivo.html', {'Nombre': Nombre, 'user_name': user_name})
+            Asunto='Archivo CSV'
+            Mensaje='Atención!! Se adjunta Archivo CSV'
+            html_content = render_to_string('archivo.html', 
+                                            {'Nombre': Nombre, 
+                                             'user_name': user_name,
+                                             'Asunto':Asunto,
+                                             'Mensaje':Mensaje
+                                             })
             text_content = strip_tags(html_content)
             subject = 'Archivo CSV'
             from_email = 'mytaxesapp@gmail.com'
@@ -164,3 +172,57 @@ def GenerarArchivoCsv(request,anno,mes):
         
     else:
             return Response(resp,status= status.HTTP_403_FORBIDDEN)
+    
+
+@api_view(['POST'])
+def ConsultaArchivosXML(request):
+
+    token_sesion,usuario,id_user =obtener_datos_token(request)
+    resp=validacionpeticion(token_sesion)
+    resultado = [] 
+    i=0
+    if resp==True:
+        
+        
+        archivos=json.loads(request.data['archivos'])
+        
+        for item in archivos:
+            nombrearchivo = item['nombrearchivo']
+            fechadescarga = item['fechadescarga']
+            uri  = item['uri']
+            if not any(nombrearchivo.endswith(f"-{i}.xml") for i in range(100)):  # Verifica hasta -9.xml
+                i=i +1
+                nombre_sin_extension = nombrearchivo.removesuffix('.xml')
+                
+                condicion_cdc = Q(cdc__exact=nombre_sin_extension)
+                condicion_user=Q(user_id__exact=id_user)
+                cdc_existente=Facturas.objects.filter(condicion_cdc & condicion_user)
+                if cdc_existente:
+                     result_serializer=FacturasSerializer(cdc_existente,many=True)
+                     procesado ='SI'
+                     fechaprocesado =result_serializer.data[0]['fecha_registro']
+                     id_factura=result_serializer.data[0]['id']
+                     data_factura=result_serializer.data
+                else:
+                     procesado ='NO'
+                     fechaprocesado =''
+                     id_factura=0
+                     data_factura=[]
+
+                archivo_procesado = {
+                'id':i,
+                'nombrearchivo': nombrearchivo,
+                'fechadescarga': fechadescarga,
+                'procesado': procesado,
+                'fechaprocesado': fechaprocesado,
+                'uri':uri,
+                'id_factura':id_factura,
+                'data_factura':data_factura
+                }
+                resultado.append(archivo_procesado)
+        
+
+        return Response(resultado,status= status.HTTP_200_OK)
+
+    else:
+        return Response(resp,status= status.HTTP_403_FORBIDDEN)

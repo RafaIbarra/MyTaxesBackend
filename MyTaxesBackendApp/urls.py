@@ -5,12 +5,16 @@ from MyTaxesBackendApp.Apis.Registros.Usuarios import *
 from MyTaxesBackendApp.Apis.Registros.Operaciones import *
 from MyTaxesBackendApp.Apis.Listados.ListadosRegistro import *
 from MyTaxesBackendApp.Apis.Utilidades.Api_Utilidades import *
+from MyTaxesBackendApp.Apis.Registros.RegistroVersiones import *
 urlpatterns = [
     path('ScrapingDatos/',ScrapingDatos,name='ScrapingDatos'),
     path("scraping/", ScrapingView.as_view(), name="scraping"),
     path("scrapingselenium/", ScrapingViewSelenium.as_view(), name="ScrapingViewSelenium"),
     path("LecturaArchivoXml/", LecturaArchivoXml.as_view(), name="LecturaArchivoXml"),
     path('RegistroUsuario/',RegistroUsuario.as_view(),name="RegistroUsuario"), 
+    path('RegistroVersion/',RegistroVersion.as_view(),name="RegistroVersion"), 
+    path('ComprobarVersion/',ComprobarVersion.as_view(),name="ComprobarVersion"), 
+    path('EliminarSesiones/',EliminarSesiones.as_view(),name="EliminarSesiones"), 
     path('Login/',Login.as_view(),name="Login"), 
     path('ComprobarSesionUsuario/',comprobarsesionusuario,name="comprobarsesionusuario"), 
     path('RegistroFactura/',registrofactura,name="registrofactura"), 
@@ -31,9 +35,12 @@ urlpatterns = [
 
      path('ListaEmpresas/',ListaEmpresas,name='ListaEmpresas'),
 
+     path('ConsultaArchivosXML/',ConsultaArchivosXML,name='ConsultaArchivosXML'),
+
 
 
 
     
     
 ]
+

@@ -61,6 +61,13 @@ def registrofactura(request):
         if len(request.data['rucempresa']) < 1:
             mensaje='Ingrese el ruc de la empresa'
             data_errores = data_errores + mensaje if len(data_errores) == 0 else data_errores + '; ' + mensaje
+
+        if request.data['cdc'] !=request.data['cdcarchivo'] :
+            mensaje='El CDC del archivo no coincide con el seleccionado, '+ request.data['cdc'] +' <> ' + request.data['cdcarchivo']
+            data_errores = data_errores + mensaje if len(data_errores) == 0 else data_errores + '; ' + mensaje
+        else:
+            pass
+
         
         if validaciones_registros(request.data,'fecha_factura'):
             fecha_obj = datetime.strptime(request.data['fecha_factura'], '%Y-%m-%d')

@@ -26,95 +26,151 @@ from rest_framework.response import Response
 from ..Seguridad.Validaciones import *
 from ..Seguridad.obtener_datos_token import *
 import time
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+from django.utils.html import strip_tags
+from MyTaxesBackendApp.Serializadores.VersionesSerializers import *
 class Login(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     
     def post(self, request, *args, **kwargs):
         user_name = request.data.get('username', '')
-        
         password = request.data.get('password', '')
-        registro_sesion=resgistrosesion(user_name)
-        
-        if registro_sesion:
+        version = request.data.get('version', '')
+        consulta_version=Versiones.objects.filter(estado__exact=1).values()
+        version_sistema=(consulta_version[0]['version']).strip()
+        link_descarga=(consulta_version[0]['link_descarga']).strip()
 
-            condicion1=Q(user_name__exact=user_name)  
-            tokenusuario=SesionesActivas.objects.filter(condicion1).values()
-            
-            for item in tokenusuario:
-                datotoken=(item['token_session'])
-                condticiontoken=Q(key__exact=datotoken)
-                existetoken=Token.objects.filter(condticiontoken).values()
-                if existetoken:
-                    t=Token.objects.get(key=datotoken)
-                    t.delete()
-            
-            SesionesActivas.objects.filter(user_name__iexact=user_name).delete()
-            
-        user = authenticate(username=user_name,password=password)
-        
-        if user:
-            user_agent = request.META.get('HTTP_USER_AGENT', 'Desconocido')
-            
-            token,created=Token.objects.get_or_create(user=user)
-           
-            consultausuarios=Usuarios.objects.filter(user_name__exact=user).values()
-            
-            fechareg=str(consultausuarios[0]['fecha_registro'])
-            fecha_obj = datetime.fromisoformat(fechareg)
-            fecha_formateada = fecha_obj.strftime("%d/%m/%Y %H:%M:%S")
+        if 'version' not in request.data:
             
             
-            try:
-        
-                datasesion=({
-                    'user_name':user_name,
-                    'fecha_conexion':datetime.now(),
-                    'token_session':token.key,
-                    'dispositivo':user_agent
-                })
 
-                datauser=[{
-                    'username':consultausuarios[0]['user_name'].capitalize(),
-                    'nombre':consultausuarios[0]['nombre_usuario'],
-                    'apellido':consultausuarios[0]['apellido_usuario'],
-                    'fecha_registro':fecha_formateada,
+            consultausuarios=Usuarios.objects.filter(user_name__exact=user_name).values()
+            
+
+            Nombre = str(consultausuarios[0]['nombre_usuario']) + '; ' + str(consultausuarios[0]['apellido_usuario'])
+            
+            Asunto='Actualizacion de Sistema, se adjunta link de descarga'
+            Mensaje=link_descarga
+
+            html_content = render_to_string('archivo.html', 
+                                            {'Nombre': Nombre, 
+                                            'user_name': user_name,
+                                            'Asunto':Asunto,
+                                            'Mensaje':Mensaje
+                                            })
+            
+            text_content = strip_tags(html_content)
+            subject = 'Actualizacion de la Aplicacion'
+            from_email = 'mytaxesapp@gmail.com'
+            to_email = str(consultausuarios[0]['correo']) 
+            
+            email = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+            email.attach_alternative(html_content, 'text/html')
+            email.send()
+
+            data_errores={
+            'mensaje':'Debe actualizar la version, se envio un correo a ' + str(consultausuarios[0]['correo']) ,
+            'Version actual':version_sistema,
+            'link':link_descarga,
+            
+        }
+
+            return Response({'error': data_errores}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            
+            if version_sistema==version:
+
+                registro_sesion=resgistrosesion(user_name)
+                
+                if registro_sesion:
+
+                    condicion1=Q(user_name__exact=user_name)  
+                    tokenusuario=SesionesActivas.objects.filter(condicion1).values()
                     
+                    for item in tokenusuario:
+                        datotoken=(item['token_session'])
+                        condticiontoken=Q(key__exact=datotoken)
+                        existetoken=Token.objects.filter(condticiontoken).values()
+                        if existetoken:
+                            t=Token.objects.get(key=datotoken)
+                            t.delete()
+                    
+                    SesionesActivas.objects.filter(user_name__iexact=user_name).delete()
+                    
+                user = authenticate(username=user_name,password=password)
+                
+                if user:
+                    user_agent = request.META.get('HTTP_USER_AGENT', 'Desconocido')
+                    
+                    token,created=Token.objects.get_or_create(user=user)
+                
+                    consultausuarios=Usuarios.objects.filter(user_name__exact=user).values()
+                    
+                    fechareg=str(consultausuarios[0]['fecha_registro'])
+                    fecha_obj = datetime.fromisoformat(fechareg)
+                    fecha_formateada = fecha_obj.strftime("%d/%m/%Y %H:%M:%S")
+                    
+                    
+                    try:
+                
+                        datasesion=({
+                            'user_name':user_name,
+                            'fecha_conexion':datetime.now(),
+                            'token_session':token.key,
+                            'dispositivo':user_agent
+                        })
+
+                        datauser=[{
+                            'username':consultausuarios[0]['user_name'].capitalize(),
+                            'nombre':consultausuarios[0]['nombre_usuario'],
+                            'apellido':consultausuarios[0]['apellido_usuario'],
+                            'fecha_registro':fecha_formateada,
+                            
+                        }
+
+                        ]
+                    
+                    
+                        sesion_serializers=SesionesActivasSerializers(data=datasesion)
+                        if sesion_serializers.is_valid():
+                            
+                            sesion_serializers.save()
+                        
+                        
+                            login_serializer = self.serializer_class(data=request.data)
+                            if login_serializer.is_valid():
+
+                                
+                                
+                                return Response({
+                                    'token': login_serializer.validated_data.get('access'),
+                                    'refresh': login_serializer.validated_data.get('refresh'),
+                                    'sesion':token.key,
+                                    'user_name':user_name.capitalize(),
+                                    'datauser':datauser,
+                                    'message': 'Inicio de Sesion Existoso'
+                                }, status=status.HTTP_200_OK)
+                            return Response({'error': 'Contraseña o nombre de usuario incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
+                        else :
+                            
+                            return Response({'error': sesion_serializers.errors}, status=status.HTTP_400_BAD_REQUEST)
+                        
+
+                    except Exception as e:
+                        
+                        return Response({'message':e.args},status= status.HTTP_406_NOT_ACCEPTABLE)
+                        
+
+                return Response({'error': 'Contraseña o nombre de usuario incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            else:
+                data_errores={
+                'mensaje':'Debe actualizar la version',
+                'link':link_descarga
                 }
+                return Response({'error':data_errores},status= status.HTTP_406_NOT_ACCEPTABLE)
 
-                ]
-            
-               
-                sesion_serializers=SesionesActivasSerializers(data=datasesion)
-                if sesion_serializers.is_valid():
-                    
-                    sesion_serializers.save()
-                
-                
-                    login_serializer = self.serializer_class(data=request.data)
-                    if login_serializer.is_valid():
-
-                        
-                        
-                        return Response({
-                            'token': login_serializer.validated_data.get('access'),
-                            'refresh': login_serializer.validated_data.get('refresh'),
-                            'sesion':token.key,
-                            'user_name':user_name.capitalize(),
-                            'datauser':datauser,
-                            'message': 'Inicio de Sesion Existoso'
-                        }, status=status.HTTP_200_OK)
-                    return Response({'error': 'Contraseña o nombre de usuario incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
-                else :
-                    
-                    return Response({'error': sesion_serializers.errors}, status=status.HTTP_400_BAD_REQUEST)
-                
-
-            except Exception as e:
-                
-                return Response({'message':e.args},status= status.HTTP_406_NOT_ACCEPTABLE)
-                
-
-        return Response({'error': 'Contraseña o nombre de usuario incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
     
 class RegistroUsuario(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -208,6 +264,27 @@ class RegistroUsuario(TokenObtainPairView):
                         }
 
                         ]
+
+                        Nombre = nombre + '; ' + apellido
+                        user_name = user
+                        Asunto='Creacion de usuario'
+                        Mensaje='Se registro su usuario'
+
+                        html_content = render_to_string('archivo.html', 
+                                                        {'Nombre': Nombre, 
+                                                        'user_name': user_name,
+                                                        'Asunto':Asunto,
+                                                        'Mensaje':Mensaje
+                                                        })
+                        
+                        text_content = strip_tags(html_content)
+                        subject = 'Inicio Aplicacion'
+                        from_email = 'mytaxesapp@gmail.com'
+                        to_email = correo
+                        
+                        email = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+                        email.attach_alternative(html_content, 'text/html')
+                        email.send()
                         
                         return Response({
                             'token': login_serializer.validated_data.get('access'),
@@ -244,28 +321,77 @@ class RegistroUsuario(TokenObtainPairView):
 
 @api_view(['POST'])
 def comprobarsesionusuario(request):
+    
+    version=request.data['version']
+    
+    consulta_version=Versiones.objects.filter(estado__exact=1).values()
+    version_sistema=(consulta_version[0]['version']).strip()
+    version=version.strip()
+    if version_sistema==version:
+        token_sesion,usuario,id_user =obtener_datos_token(request)
+        resp=validacionpeticion(token_sesion)
+        # time.sleep(10)
+        if resp==True:
+            
+            
+                consultausuarios=Usuarios.objects.filter(user_name__exact=usuario).values()
+                fechareg=str(consultausuarios[0]['fecha_registro'])
+                fecha_obj = datetime.fromisoformat(fechareg)
+                fecha_formateada = fecha_obj.strftime("%d/%m/%Y %H:%M:%S")
+                datauser=[{
+                            'username':consultausuarios[0]['user_name'].capitalize(),
+                            'nombre':consultausuarios[0]['nombre_usuario'],
+                            'apellido':consultausuarios[0]['apellido_usuario'],
+                            'fecha_registro':fecha_formateada,
+                            
+                        }
 
-    token_sesion,usuario,id_user =obtener_datos_token(request)
-    resp=validacionpeticion(token_sesion)
-    # time.sleep(10)
-    if resp==True:
-        
-        consultausuarios=Usuarios.objects.filter(user_name__exact=usuario).values()
-        fechareg=str(consultausuarios[0]['fecha_registro'])
-        fecha_obj = datetime.fromisoformat(fechareg)
-        fecha_formateada = fecha_obj.strftime("%d/%m/%Y %H:%M:%S")
-        datauser=[{
-                    'username':consultausuarios[0]['user_name'].capitalize(),
-                    'nombre':consultausuarios[0]['nombre_usuario'],
-                    'apellido':consultausuarios[0]['apellido_usuario'],
-                    'fecha_registro':fecha_formateada,
-                    
-                }
-
-                ]     
-        return Response({'datauser':datauser},status= status.HTTP_200_OK)
+                        ] 
+                 
+                return Response({'datauser':datauser},status= status.HTTP_200_OK)
+            
+        else:
+            return Response(resp,status= status.HTTP_403_FORBIDDEN)
     else:
-        return Response(resp,status= status.HTTP_403_FORBIDDEN)
+        
+        data_errores={
+            'mensaje':'Debe actualizar la version',
+            'link':consulta_version[0]['link_descarga'].strip()
+        }
+        
+        return Response({'data':data_errores},status= status.HTTP_400_BAD_REQUEST)
+    
+
+class ComprobarVersion(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    
+    def post(self, request, *args, **kwargs):
+        version=request.data['version']
+        
+        consulta_version=Versiones.objects.filter(estado__exact=1).values()
+        version_sistema=(consulta_version[0]['version']).strip()
+        version=version.strip()
+        if version_sistema==version:
+           
+            return Response({'data':'OK'},status= status.HTTP_200_OK)
+                
+            
+        else:
+           
+            data_errores={
+                'mensaje':'Debe actualizar la version',
+                'link':consulta_version[0]['link_descarga'].strip()
+            }
+            
+            return Response({'error':data_errores},status= status.HTTP_400_BAD_REQUEST)
+        
+class EliminarSesiones(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    
+    def post(self, request, *args, **kwargs):
+        
+        SesionesActivas.objects.all().delete()
+        return Response({"mensaje": "Todas las sesiones han sido eliminadas"}, status=status.HTTP_204_NO_CONTENT)
         
 
 def formato_user(data):

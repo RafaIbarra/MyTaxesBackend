@@ -15,6 +15,7 @@ class Usuarios(models.Model):
     nombre_fantasia=models.CharField(max_length=200,blank=True)
     ultima_conexion=models.DateTimeField("fecha ultma conexion")
     fecha_registro=models.DateTimeField("fecha registro")
+    
 
     class Meta:
         db_table="Usuarios"
@@ -77,6 +78,7 @@ class SesionesActivas(models.Model):
     token_session=models.CharField(max_length=100,blank=True)
     dispositivo=models.CharField(max_length=200,blank=True)
     
+    
     class Meta:
         db_table="SesionesActivas"
 
@@ -107,3 +109,14 @@ class SolicitudPassword(models.Model):
 
     class Meta:
         db_table="SolicitudPassword"
+
+class Versiones(models.Model):
+    id= models.AutoField(primary_key=True, serialize=False)
+    version=models.CharField(max_length=20,blank=False)
+    link_descarga=models.CharField(max_length=200,blank=False)
+    descripcion=models.CharField(max_length=200,blank=False)
+    estado=models.IntegerField()
+    fecha_creacion=models.DateTimeField("fecha creacion",blank=False)
+
+    class Meta:
+        db_table="Versiones"

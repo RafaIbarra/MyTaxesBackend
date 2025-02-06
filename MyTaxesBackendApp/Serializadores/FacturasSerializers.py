@@ -34,21 +34,7 @@ class FacturasSerializer(serializers.ModelSerializer):
                 "DetalleFactura"
                 ]
     
-    # def get_DetalleFactura(self, obj):
-    #     try:
-    #         # Filtramos los detalles de la factura
-    #         detalles_obj = FacturasDetalle.objects.filter(factura_id=obj.id).values('id', 'concepto', 'cantidad', 'total')
-    #         # Convertimos a formato JSON
-    #         result = [{
-    #             "id": detalle['id'],
-    #             "Concepto": detalle['concepto'],
-    #             "Cantidad": detalle['cantidad'],
-    #             "Total": detalle['total'],
-    #         } for detalle in detalles_obj]
 
-    #         return result
-    #     except FacturasDetalle.DoesNotExist:
-    #         return []
     def get_DetalleFactura(self, obj):
         # Filtrar los detalles relacionados con la factura
         detalles_obj = FacturasDetalle.objects.filter(factura=obj)
