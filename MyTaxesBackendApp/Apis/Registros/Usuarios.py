@@ -74,9 +74,11 @@ class Login(TokenObtainPairView):
             'Version actual':version_sistema,
             'link':link_descarga,
             
-        }
+            }
 
-            return Response({'error': data_errores}, status=status.HTTP_400_BAD_REQUEST)
+            mensaje='Debe actualizar la version, se envio un correo a, ' + str(consultausuarios[0]['correo']) +', con el link de descarga'
+
+            return Response({'error': mensaje}, status=status.HTTP_400_BAD_REQUEST)
         else:
             
             if version_sistema==version:
