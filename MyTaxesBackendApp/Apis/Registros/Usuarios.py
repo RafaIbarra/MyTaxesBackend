@@ -610,7 +610,6 @@ def resultado_codigo(id_user,codigo):
         fecha_vencimiento = fecha_vencimiento.astimezone(zona_horaria_correcta)
 
         fecha_actual = fecha_actual.replace(tzinfo=fecha_vencimiento.tzinfo)
-        
         fecha_procesamiento=datos_solicitud[0]['fecha_procesamiento']
         errores=''
         if fecha_procesamiento != None:
