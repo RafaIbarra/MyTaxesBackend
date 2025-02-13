@@ -102,7 +102,7 @@ def registrofactura(request):
         id_empresa=empresa_registro[0]['id']
         
         
-        print(request.data['total_factura'])
+        
         if len(data_errores)==0:
             
             datasave={
