@@ -100,12 +100,21 @@ class Meses(models.Model):
     
 
 class SolicitudPassword(models.Model):
+    CAMBIO_CONTRASENA = 1
+    RECUPERACION_CONTRASENA = 2
+
+    OPCIONES_TIPO = [
+        (CAMBIO_CONTRASENA, 'Cambio de contraseña'),
+        (RECUPERACION_CONTRASENA, 'Recuperación de contraseña'),
+    ]
+    
     id= models.AutoField(primary_key=True, serialize=False)
     user=models.ForeignKey(Usuarios, on_delete=models.CASCADE, default=1)
     codigo_recuperacion=models.IntegerField()
     fecha_creacion=models.DateTimeField("fecha creacion",blank=False)
     fecha_vencimiento=models.DateTimeField("fecha vencimiento",blank=False)
     fecha_procesamiento=models.DateTimeField("fecha vencimiento",blank=True,null=True)
+    codigo_tipo = models.IntegerField(choices=OPCIONES_TIPO, default=RECUPERACION_CONTRASENA) 
 
     class Meta:
         db_table="SolicitudPassword"

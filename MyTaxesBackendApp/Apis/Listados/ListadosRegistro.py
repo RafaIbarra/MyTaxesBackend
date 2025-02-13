@@ -32,6 +32,7 @@ def MovimientosFacturas(request,anno,mes,id):
             result_serializer=FacturasSerializer(lista_facturas,many=True)
             
             sorted_data = sorted(result_serializer.data, key=lambda x: x['id'], reverse=True)
+            
             return Response(sorted_data,status= status.HTTP_200_OK)
         else:
             return Response([],status= status.HTTP_200_OK)

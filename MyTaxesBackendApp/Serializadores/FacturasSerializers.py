@@ -6,7 +6,7 @@ class FacturasSerializer(serializers.ModelSerializer):
     NombreEmpresa=serializers.SerializerMethodField()
     RucEmpresa=serializers.SerializerMethodField()
     DetalleFactura = serializers.SerializerMethodField()
-
+    CantidadConceptos= serializers.SerializerMethodField()
     MesFactura=serializers.SerializerMethodField()
     NombreMesFactura=serializers.SerializerMethodField()
     AnnoFactura=serializers.SerializerMethodField()
@@ -31,7 +31,8 @@ class FacturasSerializer(serializers.ModelSerializer):
                 "empresa",
                 "NombreEmpresa",
                 "RucEmpresa",
-                "DetalleFactura"
+                "CantidadConceptos",
+                "DetalleFactura",
                 ]
     
 
@@ -43,6 +44,10 @@ class FacturasSerializer(serializers.ModelSerializer):
         detalle_serializer = FacturasDetalleSerializer(detalles_obj, many=True)
         
         return detalle_serializer.data  # Retornamos los datos serializados
+    
+    def get_CantidadConceptos(self, obj):
+        # Contamos la cantidad de registros en el detalle de la factura
+        return FacturasDetalle.objects.filter(factura=obj).count()
         
     def get_NombreEmpresa(self, obj):
         

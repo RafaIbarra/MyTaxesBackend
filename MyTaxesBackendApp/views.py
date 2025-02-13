@@ -299,7 +299,7 @@ class LecturaArchivoXml(APIView):
                     "concepto":item.find('sifen:dDesProSer', namespace).text,
                     "factura":0,
                     "fecha_registro":"",
-                    "id":0,
+                    "id":i,
                     "total":item.find('sifen:gValorItem/sifen:gValorRestaItem/sifen:dTotOpeItem', namespace).text
                 }
                 # Agregar el diccionario a la lista
@@ -372,7 +372,7 @@ class LecturaArchivoXml(APIView):
 
             dv_element = root.find('.//sifen:dTotOpe', namespace)
             if dv_element is not None:
-                total_operacion= dv_element.text
+                total_operacion= str(int(round(float(dv_element.text), 0)))
             else:
                 total_operacion="No encontrado"
 
@@ -415,7 +415,7 @@ class LecturaArchivoXml(APIView):
                 gravada10= dv_element.text
             else:
                 gravada10="No encontrado"
-
+            
             data_montos={
 
             'operacion_exenta':operacion_exenta,
@@ -441,7 +441,7 @@ class LecturaArchivoXml(APIView):
             }
 
             
-
+            
             data_result={
                 
 
@@ -461,6 +461,7 @@ class LecturaArchivoXml(APIView):
                 "tipo_registro":"",
                 "total_factura":data_montos['total_operacion'],
                 "user":0,
+                "CantidadConceptos":len(items_data_detalle),
                 "DetalleFactura":items_data_detalle
 
             }

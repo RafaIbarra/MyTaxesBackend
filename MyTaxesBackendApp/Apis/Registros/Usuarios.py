@@ -26,10 +26,13 @@ from rest_framework.response import Response
 from ..Seguridad.Validaciones import *
 from ..Seguridad.obtener_datos_token import *
 import time
+import random
+import pytz
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import strip_tags
 from MyTaxesBackendApp.Serializadores.VersionesSerializers import *
+from MyTaxesBackendApp.Serializadores.SolicitudPasswordSerializers import *
 class Login(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     
@@ -394,6 +397,197 @@ class EliminarSesiones(TokenObtainPairView):
         
         SesionesActivas.objects.all().delete()
         return Response({"mensaje": "Todas las sesiones han sido eliminadas"}, status=status.HTTP_204_NO_CONTENT)
+    
+class SolicitudRecuperacionContraseña(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    
+    def post(self, request, *args, **kwargs):
+        user_name = request.data.get('username', '')
+        correo = request.data.get('correo', '')
+        user_name=user_name.strip().lower()
+        
+        consultausuarios=Usuarios.objects.filter(user_name__exact=user_name).values()
+        
+        if consultausuarios:
+            if consultausuarios[0]['correo'].lower()==correo.lower():
+                
+
+                Nombre = str(consultausuarios[0]['nombre_usuario']) + '; ' + str(consultausuarios[0]['apellido_usuario'])
+                codigo=random.randint(1000, 9999)
+                fecha_reg=datetime.now()
+                fecha_venc=datetime.now() + timedelta(minutes=60)
+                datasave = {
+                    "user": consultausuarios[0]['id'],
+                    "codigo_recuperacion": codigo,
+                    "fecha_creacion": fecha_reg,
+                    "fecha_vencimiento": fecha_venc,
+                    "codigo_tipo": 2
+                }
+                solicitud_serializer=SolicitudPasswordSerializers(data=datasave)
+                if solicitud_serializer.is_valid():
+                    solicitud_serializer.save()
+
+                    Asunto='MY TAXES APP - RECUPERACION CONTRASEÑA'
+                    Mensaje='Recuperacion de contraseña para el usuario ' + Nombre
+                    Atencion='Para poder realizar la recuperacion de su contraseña debera ingresar el codigo de autenticación.'
+                    fecha_validez=fecha_venc.strftime("%d/%m/%Y %H:%M:%S")
+                    html_content = render_to_string('pass.html', 
+                                                    {'Nombre': Nombre, 
+                                                    'user_name': user_name,
+                                                    'Asunto':Asunto,
+                                                    'Mensaje':Mensaje,
+                                                    'Atencion':Atencion,
+                                                    'fecha_validez':fecha_validez,
+                                                    'codigo':codigo
+                                                    })
+                    
+                    text_content = strip_tags(html_content)
+                    subject = 'Recuperacion Contraseña'
+                    from_email = 'mytaxesapp@gmail.com'
+                    to_email = str(consultausuarios[0]['correo']) 
+                    
+                    email = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+                    email.attach_alternative(html_content, 'text/html')
+                    email.send()
+                    #time.sleep(5)
+
+                    
+
+                    mensaje='Se envio un correo a, ' + str(consultausuarios[0]['correo']) +', el codigo de verificacion'
+
+                    # return Response( mensaje, status=status.HTTP_200_OK)
+                    return Response({'mensaje': mensaje},status=status.HTTP_200_OK)
+                else:
+                    
+                    return Response({'error':solicitud_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+            else:
+                
+                data_errores={
+                'mensaje':'El correo ingresado no coincide con el registrado por el usuario',
+                
+                }
+                return Response({'error':data_errores},status= status.HTTP_400_BAD_REQUEST)
+        return Response({'error':'No existe usuario registrado con el user name ingresado'},status= status.HTTP_400_BAD_REQUEST)
+        
+class ActualizacionPassword(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    
+    def post(self, request, *args, **kwargs):
+        user_name = request.data.get('username', '')
+        user_name=user_name.strip().lower()
+        correo = request.data.get('correo', '')
+        passwor1 = request.data.get('password', '')
+        passwor2 = request.data.get('password2', '')
+        codigo = request.data.get('codigo', '')
+        mensajes_error = {}
+        user_name=user_name.strip().lower()
+        consultausuarios=Usuarios.objects.filter(user_name__exact=user_name).values()
+        if consultausuarios:
+            id_user=consultausuarios[0]['id']
+            result=resultado_codigo(id_user,codigo)
+            if not passwor1.strip():  # Verifica si la contraseña está vacía
+                        mensajes_error['password']='La contraseña no puede estar vacía' 
+                        return Response({'error':mensajes_error},status= status.HTTP_400_BAD_REQUEST) 
+            
+            if result=='OK':
+                if consultausuarios[0]['correo'].lower()==correo.lower() and  passwor1==passwor2:
+                    try:
+                        usuario=User.objects.get(username=user_name)
+                        usuario.set_password(passwor1)
+                        usuario.save()
+
+                        condicion1 = Q(codigo_recuperacion__exact=codigo)
+                        condicion2= Q(user_id__exact=id_user)
+                        datos_solicitud=list(SolicitudPassword.objects.filter(condicion1 & condicion2).values())
+
+                        datasave={
+                            "id":  datos_solicitud[0]['id'],
+                            "user":  id_user,
+                            "codigo_recuperacion": datos_solicitud[0]['codigo_recuperacion'],
+                            "fecha_creacion": datos_solicitud[0]['fecha_creacion'],
+                            "fecha_vencimiento": datos_solicitud[0]['fecha_vencimiento'],
+                            "fecha_procesamiento":datetime.now()
+                        }
+            
+                        condicion=Q(id__exact=datos_solicitud[0]['id'])
+                        existente=SolicitudPassword.objects.get(condicion)
+                        
+                        sol_serializer=SolicitudPasswordSerializers(existente,data=datasave)
+                        if sol_serializer.is_valid():
+                            sol_serializer.save()
+                            return Response({'mensaje': 'Contraseña Actualizada' },status=status.HTTP_200_OK)
+                        else:
+                            return Response({'error':sol_serializer.errors},status=status.HTTP_400_BAD_REQUEST)    
+
+                    except Exception as e:
+                        error=str(e)
+                        return Response({'error':error},status=status.HTTP_400_BAD_REQUEST)
+                    
+
+                        
+
+                    
+                else:
+                    mensajeerror=''
+                    if consultausuarios[0]['correo'].lower()!=correo.lower():
+                        mensajeerror='El correo ingresado no coincide con el registrado por el usuario'
+                    
+                    if passwor1!=passwor2:
+                     
+                        if len(mensajeerror) ==0:
+                            mensajeerror='Las contraseñas no coinciden'
+                        else:
+                            mensajeerror=mensajeerror + '; Las contraseñas no coinciden'
+
+                    data_errores={
+                    'mensaje':mensajeerror,
+                    
+                    }
+                    return Response({'error':data_errores},status= status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error':result},status= status.HTTP_400_BAD_REQUEST)
+            
+        return Response({'error':'No existe usuario registrado con el user name ingresado'},status= status.HTTP_400_BAD_REQUEST)
+        
+
+class ComprobarCodigoSeguridad(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    
+    def post(self, request, *args, **kwargs):
+        user_name = request.data.get('username', '')
+        user_name=user_name.strip().lower()
+        correo = request.data.get('correo', '')
+        
+        codigo = request.data.get('codigo', '')
+        mensajes_error = {}
+        consultausuarios=Usuarios.objects.filter(user_name__exact=user_name).values()
+        if consultausuarios:
+            id_user=consultausuarios[0]['id']
+            result=resultado_codigo(id_user,codigo)
+            
+            
+            if result=='OK':
+                
+                    if consultausuarios[0]['correo'].lower()==correo.lower():
+                        
+                        
+                        return Response({'mensaje': 'OK' },status=status.HTTP_200_OK)
+
+                    else:
+                        mensajeerror=''
+                        if consultausuarios[0]['correo'].lower()!=correo.lower():
+                            mensajeerror='El correo ingresado no coincide con el registrado por el usuario'
+                        
+                        data_errores={
+                        'mensaje':mensajeerror,
+                        
+                        }
+                        return Response({'error':data_errores},status= status.HTTP_400_BAD_REQUEST)
+                
+            else:
+                return Response({'error':result},status= status.HTTP_400_BAD_REQUEST)
+        else:
+                return Response({'error':'No existe usuario registrado con el user name ingresado'},status= status.HTTP_400_BAD_REQUEST)
         
 
 def formato_user(data):
@@ -402,3 +596,33 @@ def formato_user(data):
     data = data.lower()
     data = re.sub(r'[^a-zA-Z0-9]', '', data)
     return data
+
+def resultado_codigo(id_user,codigo):
+    condicion1 = Q(codigo_recuperacion__exact=codigo)
+    condicion2= Q(user_id__exact=id_user)
+    datos_solicitud=list(SolicitudPassword.objects.filter(condicion1 & condicion2).values())
+    
+    if len(datos_solicitud) >0:
+        fecha_actual = datetime.now()
+        
+        fecha_vencimiento = datos_solicitud[0]['fecha_vencimiento']
+        zona_horaria_correcta = pytz.timezone("America/Asuncion")  # Zona horaria correcta
+        fecha_vencimiento = fecha_vencimiento.astimezone(zona_horaria_correcta)
+
+        fecha_actual = fecha_actual.replace(tzinfo=fecha_vencimiento.tzinfo)
+        
+        fecha_procesamiento=datos_solicitud[0]['fecha_procesamiento']
+        errores=''
+        if fecha_procesamiento != None:
+            errores=errores + 'El codigo ya fue utilizado'
+
+        if fecha_actual> fecha_vencimiento:
+            errores=errores + '. El codigo de seguridad ya vencio'
+        
+        if len(errores) ==0:
+            
+            return 'OK'
+        else:
+            return errores
+    else:
+        return 'El codigo no le pertence al usuario'

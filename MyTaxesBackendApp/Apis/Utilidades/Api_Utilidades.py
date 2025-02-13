@@ -176,12 +176,10 @@ def prueba_transcripcion(request):
                     
                     for i, word in enumerate(words):
                         try:
-                            # print(f"Intentando convertir: {word}")
-                            # print(w2n.word_to_num(word))
-                            # print(w2n.word_to_num(word))
+                            
                             words[i] = str(w2n.word_to_num(word))
                         except ValueError:
-                            # print(f"Palabra no convertible: {word}")
+                            
                             pass
                     
                     # Unir las palabras convertidas en la transcripción final

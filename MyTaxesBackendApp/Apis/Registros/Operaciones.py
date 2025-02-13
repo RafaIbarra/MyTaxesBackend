@@ -102,7 +102,7 @@ def registrofactura(request):
         id_empresa=empresa_registro[0]['id']
         
         
-        
+        print(request.data['total_factura'])
         if len(data_errores)==0:
             
             datasave={
@@ -111,10 +111,10 @@ def registrofactura(request):
                 "empresa":  id_empresa,
                 "numero_factura":  request.data['numero_factura'],
                 "fecha_factura": request.data['fecha_factura'],
-                "total_factura": request.data['total_factura'],
-                "iva10": request.data['iva10'],
-                "iva5": request.data['iva5'],
-                "liquidacion_iva": request.data['liquidacion_iva'],
+                "total_factura": request.data['total_factura'].replace('.', ''),
+                "iva10": request.data['iva10'].replace('.', ''),
+                "iva5": request.data['iva5'].replace('.', ''),
+                "liquidacion_iva": request.data['liquidacion_iva'].replace('.', ''),
                 "cdc": request.data['cdc'],
                 "tipo_registro":tipo_registro,
                 "fecha_registro": datetime.now()
@@ -217,7 +217,7 @@ def registrofactura(request):
             else:
                 
                 # return Response({'message':factura_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
-                return Response({'error':'error en registro de facturas'},status= status.HTTP_400_BAD_REQUEST)
+                return Response({'error':factura_serializer.errors},status= status.HTTP_400_BAD_REQUEST)
         else:
             
             return Response({'error':data_errores},status= status.HTTP_400_BAD_REQUEST)

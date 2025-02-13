@@ -19,8 +19,6 @@ urlpatterns = [
     path('ComprobarSesionUsuario/',comprobarsesionusuario,name="comprobarsesionusuario"), 
     path('RegistroFactura/',registrofactura,name="registrofactura"), 
     path('EliminarFactura/',eliminarfactura,name="eliminarfactura"), 
-
-
     path('MovimientosFacturas/<int:anno>/<int:mes>/<int:id>/',MovimientosFacturas,name="MovimientosFacturas"), 
     path('ResumenPeriodo/<int:anno>/',ResumenPeriodo,name="ResumenPeriodo"), 
 
@@ -36,6 +34,10 @@ urlpatterns = [
      path('ListaEmpresas/',ListaEmpresas,name='ListaEmpresas'),
 
      path('ConsultaArchivosXML/',ConsultaArchivosXML,name='ConsultaArchivosXML'),
+
+     path('SolicitudRecuperacionContraseña/',SolicitudRecuperacionContraseña.as_view(),name='SolicitudRecuperacionContraseña'),
+     path('ActualizacionPassword/',ActualizacionPassword.as_view(),name='ActualizacionPassword'),
+     path('ComprobarCodigoSeguridad/',ComprobarCodigoSeguridad.as_view(),name='ComprobarCodigoSeguridad'),
 
 
 
